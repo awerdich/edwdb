@@ -1,0 +1,25 @@
+{
+    "_meta": {
+        "hash": {
+            "sha256": "327f2c4e4ea359a9feb720e1928ec0b11e7742d658f0268f1233a5d174a0b297"
+        },
+        "pipfile-spec": 6,
+        "requires": {
+            "python_version": "3.7"
+        },
+        "sources": [
+            {
+                "name": "pypi",
+                "url": "https://pypi.org/simple",
+                "verify_ssl": true
+            }
+        ]
+    },
+    "default": {
+        "edwdb": {
+            "editable": true,
+            "path": "."
+        }
+    },
+    "develop": {}
+}
