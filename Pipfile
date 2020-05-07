@@ -4,9 +4,25 @@ url = "https://pypi.org/simple"
 verify_ssl = true
 
 [dev-packages]
+matplotlib = "*"
+seaborn = "*"
+jupyterlab = "*"
 
 [packages]
 edwdb = {editable = true,path = "."}
+pyodbc = "*"
+numpy = "*"
+pandas = "*"
+scipy = "*"
+pyarrow = "*"
+plac = "*"
+pyscaffold = "*"
+lz4 = "*"
+umap-learn = "*"
+python-dotenv = "*"
+xlrd = "*"
+sqlalchemy = "*"
+tqdm = "*"
 
 [requires]
 python_version = "3.7"
