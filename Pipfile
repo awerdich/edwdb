@@ -23,6 +23,7 @@ python-dotenv = "*"
 xlrd = "*"
 sqlalchemy = "*"
 tqdm = "*"
+psycopg2 = "*"
 
 [requires]
 python_version = "3.7"

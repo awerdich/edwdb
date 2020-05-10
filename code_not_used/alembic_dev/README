@@ -1,0 +1,16 @@
+EHR database, with configurations for dev and prod
+
+# initialize alembic - should only be necessary once
+alembic init alembic_dev
+
+# now configure things in alembic.ini and adjust env.py for alembic
+
+# first, create a migration script
+alembic -n ehr_dev revision --autogenerate  -m "inital import"
+
+# then run it
+alembic -n ehr_dev upgrade head
+
+# can get info about the db like this
+alembic -n ehr_dev current
+alembic -n ehr_dev history --verbose

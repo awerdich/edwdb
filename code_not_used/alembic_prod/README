@@ -1,0 +1,20 @@
+EHR database, with configurations for dev and prod
+
+# initialize alembic - should only be necessary once
+alembic init alembic_prod
+
+# if necessary, add methods for data retrieval to edw.py
+
+# define any model in the local database in ehr_db_model.py
+
+# create a migration script
+# note: alembic can not automatically rename tables or columns, it will drop them and create new ones.
+# so if you are planning to rename something, make sure to edit the migration script accordingly.
+alembic -n ehr_prod revision --autogenerate -m "notes table"
+
+# then execute the migration script
+alembic -n ehr_prod upgrade head
+
+# you can get info about the db like this
+alembic -n ehr_prod current
+alembic -n ehr_prod history --verbose
