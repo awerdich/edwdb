@@ -24,6 +24,7 @@ xlrd = "*"
 sqlalchemy = "*"
 tqdm = "*"
 psycopg2 = "*"
+ipywidgets = "*"
 
 [requires]
 python_version = "3.7"
