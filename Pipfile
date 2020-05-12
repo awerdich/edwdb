@@ -25,6 +25,7 @@ sqlalchemy = "*"
 tqdm = "*"
 psycopg2 = "*"
 ipywidgets = "*"
+alembic = "*"
 
 [requires]
 python_version = "3.7"
