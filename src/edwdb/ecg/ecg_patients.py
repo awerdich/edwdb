@@ -66,7 +66,8 @@ def ecg_in_TestOrderInterval(idlist, ecg_df, med_df, medid_target_list, Pharmace
     # ECGs with medications in target list
     ecg_med_target_list = []
     # All other ECGs with medication lists
-    ecg_med_nontarget_list = []
+    ecg_med_nontarget_list_short = []
+    ecg_med_nontarget_list_long = []
 
     # Go through each patient and combine ECGs with medications
     for p, mrn in enumerate(idlist):
@@ -104,15 +105,18 @@ def ecg_in_TestOrderInterval(idlist, ecg_df, med_df, medid_target_list, Pharmace
             else:
                 # If there are no medications in target list, save ECGs and meds in a separage dataframe
                 ecg_med = mrn_ecg.merge(mrn_med, on=['MRN'], how='left')
+                ecg_med_nontarget_list_long.append(ecg_med)
+
                 ecg_med_concat = concat_rx(ecg_med).drop_duplicates(subset=['MRN', 'file']).reset_index(drop=True)
                 # We do not need the dates any more (because we concatenated the meds)
                 ecg_med_concat = ecg_med_concat.drop(columns=['OrderStartDTS', 'OrderEndDTS'])
-                ecg_med_nontarget_list.append(ecg_med_concat)
+                ecg_med_nontarget_list_short.append(ecg_med_concat)
 
     target_df = pd.concat(ecg_med_target_list, ignore_index=True).reset_index(drop=False)
-    nontarget_df = pd.concat(ecg_med_nontarget_list, ignore_index=True).reset_index(drop=False)
+    nontarget_df_short = pd.concat(ecg_med_nontarget_list_short, ignore_index=True).reset_index(drop=False)
+    nontarget_df_long = pd.concat(ecg_med_nontarget_list_long, ignore_index=True).reset_index(drop=False)
 
-    return target_df, nontarget_df
+    return target_df, nontarget_df_short, nontarget_df_long
 
 #%% Query functions
 
@@ -176,6 +180,7 @@ ref_med = pd.read_sql(query, engine)
 
 #%% Define medication class for betablocker
 ref_med = ref_med.astype({'MedicationID': 'int'})
+ref_med = ref_med.drop(columns=['ImportOBIDTS', 'UpdateOBIDTS'])
 
 # CV MEDS
 TherapeuticClassDSC = 'CARDIOVASCULAR'
@@ -214,30 +219,28 @@ for chunk, idlist in enumerate(mrn_chunk_list):
 
     print(f'Completed. Found {len(med_df.PatientID.unique())} mrns with medication data.')
 
-    target_df, nontarget_df = ecg_in_TestOrderInterval(idlist=idlist,
-                                                       ecg_df=ecg_df,
-                                                       med_df=med_df,
-                                                       medid_target_list=medid_target_list,
-                                                       PharmaceuticalClassDSC=PharmaceuticalClassDSC,
-                                                       TherapeuticClassDSC=TherapeuticClassDSC)
+    target_df, nontarget_df_short, nontarget_df_long = ecg_in_TestOrderInterval(idlist=idlist,
+                                                                                ecg_df=ecg_df,
+                                                                                med_df=med_df,
+                                                                                medid_target_list=medid_target_list,
+                                                                                PharmaceuticalClassDSC=PharmaceuticalClassDSC,
+                                                                                TherapeuticClassDSC=TherapeuticClassDSC)
+    # Add Medication categories to nontarget_df
+    nontarget_df_ref = nontarget_df_long.merge(ref_med, on=['MedicationID', 'MedicationDSC'], how = 'left')
 
     # Save part file
     base_part_name = os.path.basename(ecg_meta_file).split('.')[0] + '_'+str(chunk).zfill(mag) + '.parquet'
     target_part_name = 'beta_' + base_part_name
-    nontarget_part_name = 'other_' + base_part_name
+    nontarget_part_name_short = 'other_' + base_part_name
+    nontarget_part_name_long = 'other_long_' + base_part_name
 
     # Need to convert OrderInterval column to string
     target_df = target_df.astype({'OrderInterval': 'str'})
+
+    # Save data
     target_df.to_parquet(os.path.join(data_root, target_part_name))
-    nontarget_df.to_parquet(os.path.join(data_root, nontarget_part_name))
-
-
-
-
-
-
-
-
+    nontarget_df_short.to_parquet(os.path.join(data_root, nontarget_part_name_short))
+    nontarget_df_ref.to_parquet(os.path.join(data_root, nontarget_part_name_long))
 
 
 
