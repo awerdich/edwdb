@@ -3,6 +3,7 @@ import typing
 import pandas as pd
 import numpy as np
 from dotenv import load_dotenv
+import glob
 
 random_state = 123 # Random state for pd sampling.
 
@@ -242,6 +243,33 @@ for chunk, idlist in enumerate(mrn_chunk_list):
     nontarget_df_short.to_parquet(os.path.join(data_root, nontarget_part_name_short))
     nontarget_df_ref.to_parquet(os.path.join(data_root, nontarget_part_name_long))
 
+#%% Load sample data
+
+def load_files(data_root):
+    target_files = glob.glob(os.path.join(data_root, 'beta_MGH_RAW_FROM2001*.parquet'))
+    nontarget_short_files = glob.glob(os.path.join(data_root, 'other_MGH_RAW_FROM2001*.parquet'))
+    nontarget_long_files = glob.glob(os.path.join(data_root, 'other_long_MGH_RAW_FROM2001*.parquet'))
+    print(f'Number of data files found: {len(target_files)}')
+    target_df_list = []
+    nontarget_short_df_list = []
+    nontarget_long_df_list = []
+    for f in range(len(target_files)):
+        print(f'Reading data set {f+1} of {len(target_files)}')
+        target_df_list.append(pd.read_parquet(target_files[f]))
+        nontarget_short_df_list.append(pd.read_parquet(nontarget_short_files[f]))
+        nontarget_long_df_list.append(pd.read_parquet(nontarget_long_files[f]))
+
+    target_df = pd.concat(target_df_list, ignore_index=True).reset_index(drop=True)
+    nontarget_short_df = pd.concat(nontarget_short_df_list, ignore_index=True).reset_index(drop=True)
+    nontarget_long_df = pd.concat(nontarget_long_df_list, ignore_index=True).reset_index(drop=True)
+
+    return target_df, nontarget_short_df, nontarget_long_df
+
+target_df, nontarget_short_df, nontarget_long_df = load_files(data_root)
+
+#%% Printing some data
+print(f'Found {len(target_df.file.unique())} ecgs from {len(target_df.MRN.unique())} mrns in target group.')
+print(f'Found {len(nontarget_short_df.file.unique())} ecgs from {len(nontarget_short_df.MRN.unique())} mrns in nontarget group.')
 
 
 
