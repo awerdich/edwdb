@@ -12,7 +12,7 @@ from collections import defaultdict, namedtuple
 import typing
 from time import sleep
 from tqdm.auto import tqdm
-from .utils import force_path
+from rpdrutils import force_path
 
 
 def ids_to_str(id_list):
@@ -724,7 +724,7 @@ class Epic:
                 df = df.rename(columns={'CurrentICD10ListTXT': 'CurrentICD10TXT'})
             return df.drop_duplicates(subset=["PatientID", "PatientEncounterID", "CurrentICD10TXT"])
 
-    @_filter_dates
+    #@_filter_dates
     def notes(self,
               patient_list,
               note_type_list=['Progress Notes', 'Discharge Summaries', 'H&P'],
