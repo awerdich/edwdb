@@ -12,7 +12,7 @@ from collections import defaultdict, namedtuple
 import typing
 from time import sleep
 from tqdm.auto import tqdm
-from rpdrutils import force_path
+from .rpdrutils import force_path
 
 
 def ids_to_str(id_list):
