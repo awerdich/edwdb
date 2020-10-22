@@ -790,7 +790,7 @@ class Epic:
                 encounter_ids = set(df_notes[~df_notes.PatientEncounterID.isnull()].PatientEncounterID.unique())
                 df_dx = self.fetch(query_ids=encounter_ids,
                                    id_type='encounter_id',
-                                   chunk_sizes={'encounterdx': 2500},
+                                   chunk_sizes={'encounterdx': 5000},
                                    prefetch_demographics=False,
                                    leave_tqdm=False,
                                    dx_only=False,
