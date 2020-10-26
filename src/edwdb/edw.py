@@ -12,8 +12,14 @@ from collections import defaultdict, namedtuple
 import typing
 from time import sleep
 from tqdm.auto import tqdm
-from .utils import force_path
+from pathlib import Path
 
+def force_path(location, require_exists=True):
+    if not isinstance(location, Path):
+        location = Path(location)
+    if require_exists and not location.exists():
+        raise ValueError("Can't open location: {}".format(location))
+    return location
 
 def ids_to_str(id_list):
     if isinstance(id_list, (tuple, list, set, pd.Series, np.ndarray, typing.MappingView)):
