@@ -30,7 +30,6 @@ def ids_to_str(id_list):
         print(type(id_list))
         raise NotImplementedError
 
-
 def concat_notes(df):
     df = df.astype({'NoteCSNID': 'int64', 'LineNBR': 'int64', 'PatientEncounterID': 'object'})
     df_maxCSNID = df[['NoteID', 'NoteCSNID']].groupby('NoteID'). \
@@ -46,7 +45,6 @@ def concat_notes(df):
         merge(meta_cols, on=['PatientLinkID', 'NoteID', 'NoteCSNID'], how='left'). \
         rename(columns={'PatientLinkID': 'PatientID'})
     return df_concat
-
 
 def concat_dx(df, as_string=True):
     # TODO PatientEncounterID should uniquely identify the patient, no need to merge on both
@@ -78,7 +76,6 @@ def concat_dx(df, as_string=True):
     # now merge back with original df and return
     return df.merge(df_concat_dx, on=['PatientID', 'PatientEncounterID'], how='left')
 
-
 def expand_list_ICD10(df):
     # expand the lists in the ICD10list
     df_icd = df.loc[~df.CurrentICD10ListTXT.isnull()]
@@ -91,7 +88,6 @@ def expand_list_ICD10(df):
         melt(id_vars=id_cols, value_name='CurrentICD10TXT'). \
         drop('variable', axis=1).dropna(subset=['CurrentICD10TXT'])
     return pd.concat([df_icd, df_empty], ignore_index=True).reset_index(drop=True)
-
 
 class ExternalIdentity(Enum):
     PMRN = 0
@@ -469,7 +465,7 @@ class Epic:
             # now_dt = dt.datetime.now()
             return df.assign(Age=(dt.datetime.now() - df.BirthDTS).dt.days / 365.2425)
 
-    @_filter_dates
+    #@_filter_dates
     def labs(self, patient_list, return_query=False):
         # TODO Unclear if Female or Male references are used; "Default" section might be unneeded
         query = (
@@ -494,7 +490,7 @@ class Epic:
                 drop_duplicates(subset=["PatientID", "PatientEncounterID", "ResultDTS",
                                         "OrderProcedureID", "ComponentID", "ResultTXT"])
 
-    @_filter_dates
+    #@_filter_dates
     def vitals(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientID, RecordedDTS, FlowsheetMeasureNM, DisplayNM, "
@@ -515,7 +511,7 @@ class Epic:
             return pd.read_sql_query(query, self.con, coerce_float=False, parse_dates=['RecordedDTS']). \
                 drop_duplicates(subset=["PatientID", "RecordedDTS", "FlowsheetMeasureNM"])
 
-    @_filter_dates
+    #@_filter_dates
     def medications(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientID, PatientEncounterID, OrderID, OriginalMedicationOrderID, "
@@ -540,7 +536,7 @@ class Epic:
                 dropna(subset=['PatientID', 'PatientEncounterID', 'OrderID']). \
                 drop_duplicates()
 
-    @_filter_dates
+    #@_filter_dates
     def tobacco(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientID, ContactDTS, "
@@ -555,7 +551,7 @@ class Epic:
             return pd.read_sql_query(query, self.con, coerce_float=False, parse_dates=['ContactDTS']). \
                 drop_duplicates(subset=['PatientID', 'ContactDTS'])
 
-    @_filter_dates
+    #@_filter_dates
     def medicalhx(self, patient_list, return_query=False):
 
         query = (
@@ -577,7 +573,7 @@ class Epic:
                 drop_duplicates(subset=['PatientID', 'PatientEncounterID', 'ICD10CD'])
 
     # TODO the ContactDTS is NOT the procedure date see issue #29
-    @_filter_dates
+    #@_filter_dates
     def surgicalhx(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientID, PatientEncounterID, Epic.Patient.SurgicalHistory_{self.db}.ProcedureID, "
@@ -595,7 +591,7 @@ class Epic:
             df["CommentTXT"] = df["CommentTXT"].fillna(value="None")
             return df.drop_duplicates(subset=['PatientID', 'PatientEncounterID', 'ProcedureID', 'CommentTXT'])
 
-    @_filter_dates
+    #@_filter_dates
     def familyhx(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientEncounterID, PatientID, ContactDTS, MedicalHistoryCD, MedicalHistoryDSC, RelationDSC "
@@ -612,7 +608,7 @@ class Epic:
             df['RelationDSC'] = df['RelationDSC'].fillna(value='Unspecified')
             return df.drop_duplicates(subset=["PatientID", "PatientEncounterID", "MedicalHistoryCD", "RelationDSC"])
 
-    @_filter_dates
+    #@_filter_dates
     def admitdx(self, patient_list, return_query=False):
         query = (
             f"SELECT Epic.Encounter.PatientEncounter_{self.db}.PatientID, "
@@ -631,7 +627,7 @@ class Epic:
                 dropna(subset=['DiagnosisID']). \
                 drop_duplicates(subset=['PatientID', 'PatientEncounterID', 'DiagnosisID'])
 
-    @_filter_dates
+    #@_filter_dates
     def problemlist(self, patient_list, return_query=False):
         query = (
             f"SELECT PatientID, "
@@ -654,7 +650,7 @@ class Epic:
     #  the problem is that the fetch iterator could infer that from the result type,
     #  but then it could also be used to fetch with saving and storing in the database.
 
-    @_filter_dates
+    #@_filter_dates
     def encounterdx(self, id_list, id_type='patient_id', dx_only=True, dx_lists='long', return_query=False):
         """
         :param id_list: list of PatientIDs or PatientEncounterIDs
