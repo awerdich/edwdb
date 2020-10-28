@@ -106,7 +106,7 @@ class Epic:
                  dataset_name='ehr',
                  date_str=dt.datetime.today().strftime("%m-%d-%Y").replace(" ", "_"),
                  min_age=20,
-                 start_date='2001-01-01',
+                 start_date='1900-01-01',
                  end_date=None,
                  pause=5,
                  **kwargs):
