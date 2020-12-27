@@ -12,14 +12,8 @@ from collections import defaultdict, namedtuple
 import typing
 from time import sleep
 from tqdm.auto import tqdm
-from pathlib import Path
+from .utils import force_path
 
-def force_path(location, require_exists=True):
-    if not isinstance(location, Path):
-        location = Path(location)
-    if require_exists and not location.exists():
-        raise ValueError("Can't open location: {}".format(location))
-    return location
 
 def ids_to_str(id_list):
     if isinstance(id_list, (tuple, list, set, pd.Series, np.ndarray, typing.MappingView)):
@@ -428,8 +422,6 @@ class Epic:
         end_date = (pd.to_datetime(start_date) +
                     pd.to_timedelta(n_days, unit='D')).strftime('%Y-%m-%d %H:%M:%S')
 
-        #breakpoint()
-
         query = (
             f"SELECT PatientID, PatientEncounterID, ResultDTS, ComponentID, ResultValueNBR "
             f"FROM Epic.Orders.Result_{self.db} "
@@ -450,6 +442,51 @@ class Epic:
             # fix column names
             labs_wide.columns = [str(col) + str(val) for col, val in labs_wide.columns]
             labs_wide = labs_wide.rename(columns={'ResultValueNBR' + k: v for k, v in component_ids.items()})
+            return labs_wide
+
+    #@_filter_dates
+    def hematology_str(self, start_date, n_days=7, return_query=False):
+        component_ids = {
+            '5200006601': 'HCT',
+            '5200006739': 'HGB',
+            '5200008673': 'MCV',
+            '5200011989': 'RBC',  # TODO ~10% are coded with 5200014701, other codes
+            '5210003022': 'WBC',
+            '5200012143': 'RDW',  # TODO expanded the panel starting with RDW
+            '5200008625': 'MCHC',
+            '5200008619': 'MCH',
+            '5200010788': 'PLT',
+            '5200009906': 'NRBC',
+            '5200009325': 'MPV'
+        }
+        # TODO make this work for lists or single items
+        start_date = start_date[0]
+        start_date = pd.to_datetime(start_date).strftime('%Y-%m-%d %H:%M:%S')
+        end_date = (pd.to_datetime(start_date) +
+                    pd.to_timedelta(n_days, unit='D')).strftime('%Y-%m-%d %H:%M:%S')
+
+        query = (
+            f"SELECT PatientID, PatientEncounterID, ResultDTS, ComponentNM, Epic.Orders.Result_{self.db}.ComponentID, ResultValueNBR "
+            f"FROM Epic.Orders.Result_{self.db} "
+            f"JOIN Epic.Reference.Component "
+            f"ON Epic.Reference.Component.ComponentID=Epic.Orders.Result_{self.db}.ComponentID "
+            f"WHERE ComponentNM IN {ids_to_str(component_ids.values())} "
+            f"AND ResultDateDTS BETWEEN '{start_date}' AND '{end_date}'"
+        )
+        if return_query:
+            return query
+        else:
+            labs = pd.read_sql_query(query, self.con, coerce_float=False, parse_dates=['ResultDTS'])
+            # TODO this drops less than 0.1% of samples, but makes reshaping much more straightforward
+            labs = labs.drop_duplicates(subset=['PatientID', 'PatientEncounterID', 'ResultDTS', 'ComponentNM'])
+            # ensure values are either float or NaN
+            labs['ResultValueNBR'] = pd.to_numeric(labs['ResultValueNBR'], errors='coerce')
+            labs_wide = labs.set_index(['PatientID', 'PatientEncounterID', 'ResultDTS', 'ComponentNM']). \
+                unstack(level=-1). \
+                reset_index()
+            # fix column names
+            labs_wide.columns = [str(col) + str(val) for col, val in labs_wide.columns]
+            labs_wide = labs_wide.rename(columns={'ResultValueNBR' + v: v for k, v in component_ids.items()})
             return labs_wide
 
     def demographics(self, patient_list, return_query=False):
@@ -730,10 +767,10 @@ class Epic:
                 df = df.rename(columns={'CurrentICD10ListTXT': 'CurrentICD10TXT'})
             return df.drop_duplicates(subset=["PatientID", "PatientEncounterID", "CurrentICD10TXT"])
 
-    #@_filter_dates
+    @_filter_dates
     def notes(self,
               patient_list,
-              note_type_list=['Progress Notes', 'Discharge Summaries', 'H&P'],
+              note_type_list=['Progress Notes', 'Discharge Summaries', 'Discharge Summary', 'H&P'],
               dx_lists='string',
               return_query=False
               ):
